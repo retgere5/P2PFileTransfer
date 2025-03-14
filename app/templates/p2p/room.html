@@ -1,0 +1,1679 @@
+{% extends "base.html" %}
+
+{% block title %}Oda - P2P Dosya Transferi{% endblock %}
+
+{% block styles %}
+<style>
+    /* Dosya sürükle-bırak alanı */
+    .drop-zone {
+        min-height: 200px;
+        border: 2px dashed #ccc;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .drop-zone.drag-over {
+        border-color: #0d6efd;
+        background-color: rgba(13, 110, 253, 0.05);
+    }
+    
+    .drop-zone .icon {
+        font-size: 48px;
+        color: #6c757d;
+        margin-bottom: 1rem;
+    }
+    
+    /* Dosya listesi */
+    .file-list {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
+    .file-item {
+        transition: all 0.3s ease;
+    }
+    
+    .file-item:hover {
+        background-color: rgba(13, 110, 253, 0.05);
+    }
+    
+    .file-icon {
+        font-size: 24px;
+        width: 32px;
+        text-align: center;
+    }
+    
+    /* İlerleme çubuğu */
+    .progress {
+        height: 8px;
+    }
+    
+    /* Sohbet alanı */
+    .chat-container {
+        height: 400px;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1rem;
+    }
+    
+    .chat-message {
+        margin-bottom: 1rem;
+        max-width: 80%;
+    }
+    
+    .chat-message.sent {
+        margin-left: auto;
+    }
+    
+    .chat-message.received {
+        margin-right: auto;
+    }
+    
+    .chat-input {
+        padding: 1rem;
+        background-color: #f8f9fa;
+        border-top: 1px solid #dee2e6;
+    }
+    
+    /* Kullanıcı listesi */
+    .user-list {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
+    .user-item {
+        transition: all 0.3s ease;
+    }
+    
+    .user-item:hover {
+        background-color: rgba(13, 110, 253, 0.05);
+    }
+    
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background-color: #0d6efd;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Sol Sütun: Dosya Transferi -->
+    <div class="col-md-8 mb-4">
+        <div class="card shadow-lg border-0 rounded-lg h-100">
+            <div class="card-header bg-primary text-white py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-exchange-alt me-2"></i>Dosya Transferi
+                    </h5>
+                    <div>
+                        <span class="badge bg-light text-primary me-2" id="roomIdBadge">
+                            Oda ID: {{ room_id }}
+                        </span>
+                        <button class="btn btn-sm btn-light" id="copyRoomIdBtn" title="Oda ID'sini Kopyala">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Bağlantı Durumu -->
+                <div class="alert alert-info mb-4" id="connectionStatus">
+                    <i class="fas fa-spinner fa-spin me-2"></i>
+                    <span>Bağlantı kuruluyor...</span>
+                </div>
+                
+                <!-- Dosya Yükleme Alanı -->
+                <div class="mb-4">
+                    <div class="drop-zone" id="dropZone">
+                        <div class="icon">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
+                        <div class="text-center">
+                            <h5 class="mb-2">Dosyaları Sürükle & Bırak</h5>
+                            <p class="text-muted mb-3">veya</p>
+                            <button class="btn btn-primary" id="selectFileBtn">
+                                <i class="fas fa-folder-open me-2"></i>Dosya Seç
+                            </button>
+                            <input type="file" id="fileInput" multiple style="display: none;">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Gönderilen Dosyalar -->
+                <div class="mb-4">
+                    <h6 class="fw-bold mb-3">
+                        <i class="fas fa-upload me-2"></i>Gönderilen Dosyalar
+                    </h6>
+                    <div class="file-list" id="sentFilesList">
+                        <!-- Gönderilen dosyalar buraya eklenecek -->
+                    </div>
+                </div>
+                
+                <!-- Alınan Dosyalar -->
+                <div>
+                    <h6 class="fw-bold mb-3">
+                        <i class="fas fa-download me-2"></i>Alınan Dosyalar
+                    </h6>
+                    <div class="file-list" id="receivedFilesList">
+                        <!-- Alınan dosyalar buraya eklenecek -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sağ Sütun: Sohbet ve Kullanıcılar -->
+    <div class="col-md-4">
+        <!-- Kullanıcılar -->
+        <div class="card shadow-lg border-0 rounded-lg mb-4">
+            <div class="card-header bg-primary text-white py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-users me-2"></i>Kullanıcılar
+                    </h5>
+                    <button class="btn btn-sm btn-light" id="changeUsernameBtn" title="Kullanıcı Adını Değiştir">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="user-list" id="userList">
+                    <!-- Kullanıcılar buraya eklenecek -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sohbet -->
+        <div class="card shadow-lg border-0 rounded-lg">
+            <div class="card-header bg-primary text-white py-3">
+                <h5 class="mb-0">
+                    <i class="fas fa-comments me-2"></i>Sohbet
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="chat-container">
+                    <div class="chat-messages" id="chatMessages">
+                        <!-- Mesajlar buraya eklenecek -->
+                    </div>
+                    <div class="chat-input">
+                        <form id="chatForm">
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="messageInput" placeholder="Mesajınızı yazın...">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Dosya Önizleme Modal -->
+<div class="modal fade" id="filePreviewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Dosya Önizleme</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="filePreviewContent"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                <button type="button" class="btn btn-primary" id="downloadFileBtn">
+                    <i class="fas fa-download me-2"></i>İndir
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Dosya Transferi Modal -->
+<div class="modal fade" id="fileTransferModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Dosya Transferi</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <div class="display-1 text-primary mb-3">
+                        <i class="fas fa-file-download"></i>
+                    </div>
+                    <h5 class="mb-3" id="transferFileName"></h5>
+                    <p class="text-muted mb-3" id="transferFileSize"></p>
+                </div>
+                
+                <div class="progress mb-3">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                         id="transferProgress" 
+                         role="progressbar" 
+                         style="width: 0%">
+                    </div>
+                </div>
+                
+                <p class="text-center mb-0" id="transferStatus"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelTransferBtn">İptal</button>
+                <button type="button" class="btn btn-success d-none" id="acceptTransferBtn">
+                    <i class="fas fa-check me-2"></i>Kabul Et
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Kullanıcı Adı Değiştirme Modal -->
+<div class="modal fade" id="changeUsernameModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Kullanıcı Adını Değiştir</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="changeUsernameForm">
+                    <div class="mb-3">
+                        <label for="usernameInput" class="form-label">Yeni Kullanıcı Adı</label>
+                        <input type="text" class="form-control" id="usernameInput" placeholder="Kullanıcı adınızı girin" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-primary" id="saveUsernameBtn">Kaydet</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Yardımcı Fonksiyonlar
+    function formatBytes(bytes, decimals = 2) {
+        if (bytes === 0) return '0 Bytes';
+        
+        const k = 1024;
+        const dm = decimals < 0 ? 0 : decimals;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+        
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+    }
+    
+    function formatDate(date) {
+        return new Date(date).toLocaleString('tr-TR', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+    
+    function getFileIcon(fileName) {
+        const extension = fileName.split('.').pop().toLowerCase();
+        
+        const iconMap = {
+            // Resimler
+            'jpg': 'fa-image',
+            'jpeg': 'fa-image',
+            'png': 'fa-image',
+            'gif': 'fa-image',
+            'svg': 'fa-image',
+            
+            // Belgeler
+            'pdf': 'fa-file-pdf',
+            'doc': 'fa-file-word',
+            'docx': 'fa-file-word',
+            'xls': 'fa-file-excel',
+            'xlsx': 'fa-file-excel',
+            'ppt': 'fa-file-powerpoint',
+            'pptx': 'fa-file-powerpoint',
+            'txt': 'fa-file-alt',
+            
+            // Arşivler
+            'zip': 'fa-file-archive',
+            'rar': 'fa-file-archive',
+            '7z': 'fa-file-archive',
+            
+            // Ses/Video
+            'mp3': 'fa-file-audio',
+            'wav': 'fa-file-audio',
+            'mp4': 'fa-file-video',
+            'avi': 'fa-file-video',
+            
+            // Kod
+            'html': 'fa-file-code',
+            'css': 'fa-file-code',
+            'js': 'fa-file-code',
+            'py': 'fa-file-code',
+            'json': 'fa-file-code',
+            'xml': 'fa-file-code'
+        };
+        
+        return iconMap[extension] || 'fa-file';
+    }
+    
+    function getFileColor(fileName) {
+        const extension = fileName.split('.').pop().toLowerCase();
+        
+        const colorMap = {
+            // Resimler
+            'jpg': 'text-success',
+            'jpeg': 'text-success',
+            'png': 'text-success',
+            'gif': 'text-success',
+            'svg': 'text-success',
+            
+            // Belgeler
+            'pdf': 'text-danger',
+            'doc': 'text-primary',
+            'docx': 'text-primary',
+            'xls': 'text-success',
+            'xlsx': 'text-success',
+            'ppt': 'text-warning',
+            'pptx': 'text-warning',
+            'txt': 'text-secondary',
+            
+            // Arşivler
+            'zip': 'text-warning',
+            'rar': 'text-warning',
+            '7z': 'text-warning',
+            
+            // Ses/Video
+            'mp3': 'text-info',
+            'wav': 'text-info',
+            'mp4': 'text-info',
+            'avi': 'text-info',
+            
+            // Kod
+            'html': 'text-danger',
+            'css': 'text-primary',
+            'js': 'text-warning',
+            'py': 'text-primary',
+            'json': 'text-success',
+            'xml': 'text-danger'
+        };
+        
+        return colorMap[extension] || 'text-secondary';
+    }
+
+    // WebRTC Yapılandırması
+    const rtcConfig = {
+        iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' },
+            { urls: 'stun:stun3.l.google.com:19302' },
+            { urls: 'stun:stun4.l.google.com:19302' }
+        ],
+        iceCandidatePoolSize: 10
+    };
+    
+    // WebRTC Değişkenleri
+    let peerConnection = null;
+    let dataChannel = null;
+    let localStream = null;
+    let currentFile = null;
+    let currentFileChunks = [];
+    let currentChunkSize = 262144; // 256KB (artırıldı, önceki değer: 16KB)
+    let currentFileSize = 0;
+    let currentFileName = '';
+    let currentFileType = '';
+    let currentTransferType = '';
+    let transferInProgress = false;
+    let connectionTimeout = null;
+    let isInitiator = false;
+    let transferWorker = null;
+    let transferPaused = false;
+    let transferQueue = [];
+    
+    // Sayfa Görünürlük API'si
+    let pageVisible = true;
+    
+    // Socket.IO Bağlantısı
+    const socket = io();
+    
+    // DOM Elementleri
+    const connectionStatus = document.getElementById('connectionStatus');
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const selectFileBtn = document.getElementById('selectFileBtn');
+    const sentFilesList = document.getElementById('sentFilesList');
+    const receivedFilesList = document.getElementById('receivedFilesList');
+    const copyRoomIdBtn = document.getElementById('copyRoomIdBtn');
+    const filePreviewModal = new bootstrap.Modal(document.getElementById('filePreviewModal'));
+    const fileTransferModal = new bootstrap.Modal(document.getElementById('fileTransferModal'));
+    const transferFileName = document.getElementById('transferFileName');
+    const transferFileSize = document.getElementById('transferFileSize');
+    const transferProgress = document.getElementById('transferProgress');
+    const transferStatus = document.getElementById('transferStatus');
+    const acceptTransferBtn = document.getElementById('acceptTransferBtn');
+    const cancelTransferBtn = document.getElementById('cancelTransferBtn');
+    
+    // Sohbet ve Kullanıcı Yönetimi
+    const chatMessages = document.getElementById('chatMessages');
+    const chatForm = document.getElementById('chatForm');
+    const messageInput = document.getElementById('messageInput');
+    const userList = document.getElementById('userList');
+    
+    let currentUser = {
+        id: '',
+        name: `Kullanıcı${Math.floor(Math.random() * 1000)}`,
+        color: `hsl(${Math.floor(Math.random() * 360)}, 70%, 50%)`
+    };
+    
+    let users = new Map();
+    
+    // WebRTC Bağlantı Yönetimi
+    function createPeerConnection() {
+        if (peerConnection) {
+            console.log('Mevcut bağlantı kapatılıyor...');
+            peerConnection.close();
+            peerConnection = null;
+        }
+        
+        try {
+            console.log('Yeni peer bağlantısı oluşturuluyor...');
+            peerConnection = new RTCPeerConnection(rtcConfig);
+            
+            // ICE aday olayları
+            peerConnection.onicecandidate = event => {
+                if (event.candidate) {
+                    console.log('ICE adayı bulundu:', event.candidate);
+                    socket.emit('signal', {
+                        type: 'candidate',
+                        candidate: event.candidate
+                    });
+                } else {
+                    console.log('ICE aday toplama tamamlandı');
+                }
+            };
+            
+            // ICE bağlantı durumu değişikliği
+            peerConnection.oniceconnectionstatechange = () => {
+                console.log('ICE bağlantı durumu:', peerConnection.iceConnectionState);
+                
+                if (peerConnection.iceConnectionState === 'connected' || 
+                    peerConnection.iceConnectionState === 'completed') {
+                    // Bağlantı başarılı, zaman aşımını temizle
+                    if (connectionTimeout) {
+                        clearTimeout(connectionTimeout);
+                        connectionTimeout = null;
+                    }
+                } else if (peerConnection.iceConnectionState === 'failed' || 
+                           peerConnection.iceConnectionState === 'disconnected' || 
+                           peerConnection.iceConnectionState === 'closed') {
+                    // Bağlantı başarısız, yeniden deneme
+                    showError('Bağlantı kurulamadı. Yeniden deneniyor...');
+                    restartConnection();
+                }
+                
+                updateConnectionStatus();
+            };
+            
+            // Bağlantı durumu değişikliği
+            peerConnection.onconnectionstatechange = () => {
+                console.log('Bağlantı durumu:', peerConnection.connectionState);
+                updateConnectionStatus();
+                
+                if (peerConnection.connectionState === 'connected') {
+                    showSystemMessage('Bağlantı başarıyla kuruldu.');
+                } else if (peerConnection.connectionState === 'failed' || 
+                           peerConnection.connectionState === 'disconnected' || 
+                           peerConnection.connectionState === 'closed') {
+                    showSystemMessage('Bağlantı kesildi veya kurulamadı.');
+                }
+            };
+            
+            // Veri kanalı olayları
+            peerConnection.ondatachannel = event => {
+                console.log('Veri kanalı alındı');
+                setupDataChannel(event.channel);
+            };
+            
+            // Veri kanalı oluştur (sadece başlatıcı için)
+            if (isInitiator) {
+                console.log('Veri kanalı oluşturuluyor (başlatıcı)');
+                dataChannel = peerConnection.createDataChannel('fileTransfer', {
+                    ordered: true
+                });
+                
+                setupDataChannel(dataChannel);
+            }
+            
+            // Bağlantı zaman aşımı
+            connectionTimeout = setTimeout(() => {
+                if (peerConnection.iceConnectionState !== 'connected' && 
+                    peerConnection.iceConnectionState !== 'completed') {
+                    console.log('Bağlantı zaman aşımı, yeniden deneniyor...');
+                    showError('Bağlantı zaman aşımına uğradı. Yeniden deneniyor...');
+                    restartConnection();
+                }
+            }, 15000); // 15 saniye
+            
+            console.log('Peer bağlantısı oluşturuldu');
+        } catch (error) {
+            console.error('Peer bağlantısı oluşturulurken hata:', error);
+            showError('Bağlantı kurulurken bir hata oluştu: ' + error.message);
+        }
+    }
+    
+    function setupDataChannel(channel) {
+        channel.binaryType = 'arraybuffer';
+        
+        channel.onopen = () => {
+            console.log('Veri kanalı açıldı');
+            updateConnectionStatus();
+            showSystemMessage('Bağlantı kuruldu! Dosya transferi ve sohbet artık aktif.');
+            
+            // Kullanıcı bilgilerini gönder
+            sendUserInfo();
+        };
+        
+        channel.onclose = () => {
+            console.log('Veri kanalı kapandı');
+            updateConnectionStatus();
+            showSystemMessage('Bağlantı kesildi. Yeniden bağlanmaya çalışılıyor...');
+            
+            // Bağlantıyı yeniden başlat
+            setTimeout(() => {
+                if (peerConnection.connectionState !== 'connected') {
+                    restartConnection();
+                }
+            }, 2000);
+        };
+        
+        channel.onerror = error => {
+            console.error('Veri kanalı hatası:', error);
+            updateConnectionStatus();
+            showSystemMessage('Bağlantıda bir hata oluştu: ' + error.message);
+        };
+        
+        channel.onmessage = event => {
+            handleDataChannelMessage(event.data);
+        };
+        
+        // Veri kanalını global değişkene ata
+        dataChannel = channel;
+    }
+    
+    function restartConnection() {
+        if (peerConnection) {
+            peerConnection.close();
+            peerConnection = null;
+        }
+        
+        // Kısa bir gecikme ile yeniden bağlan
+        setTimeout(() => {
+            createPeerConnection();
+            
+            if (isInitiator) {
+                createOffer();
+            }
+        }, 1000);
+    }
+    
+    function createOffer() {
+        if (!peerConnection) {
+            console.error('Offer oluşturulamıyor: Peer bağlantısı yok');
+            return;
+        }
+        
+        console.log('Offer oluşturuluyor...');
+        peerConnection.createOffer()
+            .then(offer => {
+                console.log('Offer oluşturuldu, yerel açıklama ayarlanıyor...');
+                return peerConnection.setLocalDescription(offer);
+            })
+            .then(() => {
+                console.log('Yerel açıklama ayarlandı, offer gönderiliyor...');
+                socket.emit('signal', {
+                    type: 'offer',
+                    offer: peerConnection.localDescription
+                });
+            })
+            .catch(error => {
+                console.error('Offer oluşturulurken hata:', error);
+                showError('Bağlantı teklifi oluşturulurken bir hata oluştu');
+            });
+    }
+    
+    function updateConnectionStatus() {
+        if (!peerConnection) {
+            connectionStatus.innerHTML = `
+                <i class="fas fa-spinner fa-spin me-2"></i>
+                <span>Bağlantı bekleniyor...</span>
+            `;
+            connectionStatus.className = 'alert alert-info mb-4';
+            return;
+        }
+        
+        switch (peerConnection.connectionState) {
+            case 'new':
+                connectionStatus.innerHTML = `
+                    <i class="fas fa-spinner fa-spin me-2"></i>
+                    <span>Bağlantı başlatılıyor...</span>
+                `;
+                connectionStatus.className = 'alert alert-info mb-4';
+                break;
+            
+            case 'connecting':
+                connectionStatus.innerHTML = `
+                    <i class="fas fa-spinner fa-spin me-2"></i>
+                    <span>Bağlantı kuruluyor...</span>
+                `;
+                connectionStatus.className = 'alert alert-info mb-4';
+                break;
+            
+            case 'connected':
+                connectionStatus.innerHTML = `
+                    <i class="fas fa-check-circle me-2"></i>
+                    <span>Bağlantı kuruldu</span>
+                `;
+                connectionStatus.className = 'alert alert-success mb-4';
+                break;
+            
+            case 'disconnected':
+                connectionStatus.innerHTML = `
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    <span>Bağlantı kesildi, yeniden bağlanılıyor...</span>
+                `;
+                connectionStatus.className = 'alert alert-warning mb-4';
+                break;
+            
+            case 'failed':
+                connectionStatus.innerHTML = `
+                    <i class="fas fa-times-circle me-2"></i>
+                    <span>Bağlantı başarısız oldu, yeniden deneniyor...</span>
+                `;
+                connectionStatus.className = 'alert alert-danger mb-4';
+                break;
+            
+            case 'closed':
+                connectionStatus.innerHTML = `
+                    <i class="fas fa-times-circle me-2"></i>
+                    <span>Bağlantı kapatıldı</span>
+                `;
+                connectionStatus.className = 'alert alert-secondary mb-4';
+                break;
+        }
+    }
+    
+    // Kullanıcı bilgilerini gönder
+    function sendUserInfo() {
+        if (dataChannel && dataChannel.readyState === 'open') {
+            dataChannel.send(JSON.stringify({
+                type: 'user_info',
+                data: currentUser
+            }));
+        }
+    }
+    
+    // Web Worker oluştur
+    function createTransferWorker() {
+        // Eğer tarayıcı Web Workers desteklemiyorsa
+        if (typeof(Worker) === "undefined") {
+            console.warn("Tarayıcınız Web Workers desteklemiyor. Performans düşük olabilir.");
+            return null;
+        }
+        
+        // Worker kodu
+        const workerCode = `
+            // Dosya transfer işleyicisi
+            let chunks = [];
+            let chunkIndex = 0;
+            let totalChunks = 0;
+            let chunkSize = 0;
+            let transferActive = false;
+            
+            // Worker mesaj olayı
+            self.onmessage = function(e) {
+                const data = e.data;
+                
+                switch(data.cmd) {
+                    case 'start':
+                        // Transfer başlat
+                        chunks = data.chunks;
+                        chunkSize = data.chunkSize;
+                        totalChunks = chunks.length;
+                        chunkIndex = 0;
+                        transferActive = true;
+                        sendNextChunk();
+                        break;
+                        
+                    case 'pause':
+                        // Transfer duraklat
+                        transferActive = false;
+                        self.postMessage({
+                            type: 'status',
+                            status: 'paused',
+                            progress: Math.round((chunkIndex / totalChunks) * 100)
+                        });
+                        break;
+                        
+                    case 'resume':
+                        // Transfer devam ettir
+                        transferActive = true;
+                        sendNextChunk();
+                        break;
+                        
+                    case 'cancel':
+                        // Transfer iptal
+                        transferActive = false;
+                        chunks = [];
+                        chunkIndex = 0;
+                        totalChunks = 0;
+                        self.postMessage({
+                            type: 'status',
+                            status: 'canceled'
+                        });
+                        break;
+                }
+            };
+            
+            // Sonraki chunk'ı gönder
+            function sendNextChunk() {
+                if (!transferActive) return;
+                
+                if (chunkIndex >= totalChunks) {
+                    // Transfer tamamlandı
+                    self.postMessage({
+                        type: 'complete'
+                    });
+                    transferActive = false;
+                    return;
+                }
+                
+                // İlerlemeyi bildir
+                if (chunkIndex % 10 === 0 || chunkIndex === totalChunks - 1) {
+                    const progress = Math.round((chunkIndex / totalChunks) * 100);
+                    self.postMessage({
+                        type: 'progress',
+                        progress: progress
+                    });
+                }
+                
+                // Chunk'ı gönder
+                self.postMessage({
+                    type: 'chunk',
+                    chunk: chunks[chunkIndex],
+                    index: chunkIndex
+                });
+                
+                chunkIndex++;
+                
+                // Sonraki chunk için zamanlayıcı ayarla (yüksek öncelikli)
+                setTimeout(sendNextChunk, 0);
+            }
+        `;
+        
+        // Blob URL oluştur
+        const blob = new Blob([workerCode], { type: 'application/javascript' });
+        const workerUrl = URL.createObjectURL(blob);
+        
+        // Worker oluştur
+        const worker = new Worker(workerUrl);
+        
+        // Worker mesaj olayı
+        worker.onmessage = function(e) {
+            const data = e.data;
+            
+            switch(data.type) {
+                case 'chunk':
+                    // Chunk'ı gönder
+                    if (dataChannel && dataChannel.readyState === 'open') {
+                        dataChannel.send(data.chunk);
+                    }
+                    break;
+                    
+                case 'progress':
+                    // İlerlemeyi güncelle
+                    updateTransferProgress(data.progress);
+                    break;
+                    
+                case 'complete':
+                    // Transfer tamamlandı
+                    if (dataChannel && dataChannel.readyState === 'open') {
+                        dataChannel.send(JSON.stringify({
+                            type: 'complete'
+                        }));
+                    }
+                    
+                    // Gönderilen dosyalar listesine ekle
+                    addFileToList(currentFileName, currentFileSize, 'sent');
+                    
+                    // Transferi sıfırla
+                    resetTransfer();
+                    
+                    // Sıradaki dosyayı işle
+                    processNextFileInQueue();
+                    break;
+                    
+                case 'status':
+                    // Durum güncellemesi
+                    console.log('Transfer durumu:', data.status);
+                    break;
+            }
+        };
+        
+        return worker;
+    }
+    
+    // Sayfa görünürlük değişikliği olayı
+    document.addEventListener('visibilitychange', () => {
+        pageVisible = !document.hidden;
+        
+        if (transferWorker && transferInProgress) {
+            if (pageVisible && transferPaused) {
+                // Sayfa görünür olduğunda transfer devam etsin
+                transferPaused = false;
+                transferWorker.postMessage({ cmd: 'resume' });
+                console.log('Transfer devam ediyor (sayfa görünür)');
+            } else if (!pageVisible && !transferPaused) {
+                // Sayfa arka planda olduğunda transfer duraklamasın
+                // Eski davranış: transferPaused = true; transferWorker.postMessage({ cmd: 'pause' });
+                console.log('Transfer devam ediyor (sayfa arka planda)');
+            }
+        }
+    });
+    
+    // WebRTC Bağlantı Yönetimi
+    // ... existing code ...
+    
+    // Dosya Transfer İşlemleri
+    function handleFileSelect(files) {
+        if (!files || files.length === 0) return;
+        
+        if (!peerConnection || peerConnection.connectionState !== 'connected') {
+            showError('Dosya göndermek için bağlantı kurulmuş olmalı');
+            return;
+        }
+        
+        // Dosyaları kuyruğa ekle
+        Array.from(files).forEach(file => {
+            transferQueue.push(file);
+        });
+        
+        // Eğer aktif transfer yoksa, sıradaki dosyayı işle
+        if (!transferInProgress) {
+            processNextFileInQueue();
+        } else {
+            showInfo(`${transferQueue.length} dosya kuyruğa eklendi. Mevcut transfer tamamlandıktan sonra işlenecek.`);
+        }
+    }
+    
+    function processNextFileInQueue() {
+        if (transferQueue.length === 0) return;
+        
+        const nextFile = transferQueue.shift();
+        sendFile(nextFile);
+    }
+    
+    async function sendFile(file) {
+        try {
+            currentFile = file;
+            currentFileSize = file.size;
+            currentFileName = file.name;
+            currentFileType = file.type;
+            currentTransferType = 'send';
+            transferInProgress = true;
+            
+            // Dosya meta verilerini gönder
+            const metadata = {
+                name: file.name,
+                type: file.type,
+                size: file.size
+            };
+            
+            dataChannel.send(JSON.stringify({
+                type: 'metadata',
+                data: metadata
+            }));
+            
+            // Dosya transferi modalını göster
+            transferFileName.textContent = file.name;
+            transferFileSize.textContent = formatBytes(file.size);
+            transferProgress.style.width = '0%';
+            transferStatus.textContent = 'Dosya gönderiliyor...';
+            acceptTransferBtn.classList.add('d-none');
+            fileTransferModal.show();
+            
+            // Dosyayı oku ve gönder
+            const arrayBuffer = await readFileAsArrayBuffer(file);
+            const chunks = [];
+            
+            // Dosyayı chunk'lara böl
+            for (let i = 0; i < arrayBuffer.byteLength; i += currentChunkSize) {
+                chunks.push(arrayBuffer.slice(i, i + currentChunkSize));
+            }
+            
+            // Web Worker kullan (varsa)
+            if (!transferWorker) {
+                transferWorker = createTransferWorker();
+            }
+            
+            if (transferWorker) {
+                // Worker ile transfer
+                transferWorker.postMessage({
+                    cmd: 'start',
+                    chunks: chunks,
+                    chunkSize: currentChunkSize
+                });
+            } else {
+                // Worker yoksa normal transfer
+                sendFileChunks(chunks);
+            }
+        } catch (error) {
+            console.error('Dosya gönderilirken hata:', error);
+            showError('Dosya gönderilirken bir hata oluştu: ' + error.message);
+            resetTransfer();
+            
+            // Sıradaki dosyayı işle
+            processNextFileInQueue();
+        }
+    }
+    
+    function readFileAsArrayBuffer(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            
+            reader.onload = () => {
+                resolve(reader.result);
+            };
+            
+            reader.onerror = () => {
+                reject(new Error('Dosya okunamadı'));
+            };
+            
+            reader.readAsArrayBuffer(file);
+        });
+    }
+    
+    function sendFileChunks(chunks) {
+        let chunkIndex = 0;
+        const totalChunks = chunks.length;
+        
+        function sendNextChunk() {
+            if (chunkIndex >= totalChunks) {
+                // Transfer tamamlandı
+                dataChannel.send(JSON.stringify({
+                    type: 'complete'
+                }));
+                
+                // Gönderilen dosyalar listesine ekle
+                addFileToList(currentFileName, currentFileSize, 'sent');
+                
+                // Transferi sıfırla
+                resetTransfer();
+                
+                // Sıradaki dosyayı işle
+                processNextFileInQueue();
+                return;
+            }
+            
+            // İlerlemeyi güncelle (her 10 chunk'ta bir veya son chunk)
+            if (chunkIndex % 10 === 0 || chunkIndex === totalChunks - 1) {
+                const progress = Math.round((chunkIndex / totalChunks) * 100);
+                updateTransferProgress(progress);
+            }
+            
+            // Chunk'ı gönder
+            dataChannel.send(chunks[chunkIndex]);
+            chunkIndex++;
+            
+            // Sonraki chunk için zamanlayıcı ayarla
+            // requestAnimationFrame kullanarak daha verimli hale getir
+            if (pageVisible) {
+                requestAnimationFrame(sendNextChunk);
+            } else {
+                setTimeout(sendNextChunk, 0);
+            }
+        }
+        
+        sendNextChunk();
+    }
+    
+    function handleDataChannelMessage(data) {
+        if (typeof data === 'string') {
+            try {
+                const message = JSON.parse(data);
+                
+                switch (message.type) {
+                    case 'metadata':
+                        handleFileMetadata(message.data);
+                        break;
+                    
+                    case 'complete':
+                        handleFileComplete();
+                        break;
+                    
+                    case 'cancel':
+                        handleFileCancel();
+                        break;
+                    
+                    case 'chat':
+                        addMessageToChat(message.data);
+                        break;
+                    
+                    case 'user_info':
+                        handleUserInfo(message.data);
+                        break;
+                }
+            } catch (error) {
+                console.error('Mesaj işlenirken hata:', error);
+            }
+        } else {
+            // Dosya chunk'ı
+            handleFileChunk(data);
+        }
+    }
+    
+    function handleFileMetadata(metadata) {
+        if (transferInProgress) {
+            dataChannel.send(JSON.stringify({
+                type: 'cancel',
+                reason: 'Devam eden bir transfer var'
+            }));
+            return;
+        }
+        
+        currentFileName = metadata.name;
+        currentFileSize = metadata.size;
+        currentFileType = metadata.type;
+        currentTransferType = 'receive';
+        currentFileChunks = [];
+        transferInProgress = true;
+        
+        // Transfer modalını göster
+        transferFileName.textContent = metadata.name;
+        transferFileSize.textContent = formatBytes(metadata.size);
+        transferProgress.style.width = '0%';
+        transferStatus.textContent = 'Dosya alınıyor...';
+        acceptTransferBtn.classList.remove('d-none');
+        fileTransferModal.show();
+    }
+    
+    function handleFileChunk(chunk) {
+        if (!transferInProgress || currentTransferType !== 'receive') return;
+        
+        currentFileChunks.push(chunk);
+        
+        // İlerlemeyi güncelle (her 10 chunk'ta bir veya son chunk)
+        const expectedChunks = Math.ceil(currentFileSize / currentChunkSize);
+        if (currentFileChunks.length % 10 === 0 || currentFileChunks.length === expectedChunks) {
+            const progress = Math.min(Math.round((currentFileChunks.length * currentChunkSize / currentFileSize) * 100), 100);
+            updateTransferProgress(progress);
+        }
+    }
+    
+    function handleFileComplete() {
+        if (!transferInProgress || currentTransferType !== 'receive') return;
+        
+        // Dosyayı oluştur
+        const blob = new Blob(currentFileChunks, { type: currentFileType });
+        const url = URL.createObjectURL(blob);
+        
+        // Alınan dosyalar listesine ekle
+        addFileToList(currentFileName, currentFileSize, 'received', url);
+        
+        // Transferi sıfırla
+        resetTransfer();
+    }
+    
+    function handleFileCancel() {
+        showError('Dosya transferi karşı tarafça iptal edildi');
+        resetTransfer();
+        
+        // Sıradaki dosyayı işle
+        processNextFileInQueue();
+    }
+    
+    function resetTransfer() {
+        // Worker'ı durdur
+        if (transferWorker && transferInProgress && currentTransferType === 'send') {
+            transferWorker.postMessage({ cmd: 'cancel' });
+        }
+        
+        currentFile = null;
+        currentFileChunks = [];
+        currentFileName = '';
+        currentFileSize = 0;
+        currentFileType = '';
+        currentTransferType = '';
+        transferInProgress = false;
+        transferPaused = false;
+        
+        // Modalı kapat
+        fileTransferModal.hide();
+        
+        // İlerlemeyi sıfırla
+        transferProgress.style.width = '0%';
+    }
+    
+    function updateTransferProgress(progress) {
+        transferProgress.style.width = `${progress}%`;
+        transferProgress.setAttribute('aria-valuenow', progress);
+        
+        if (progress === 100) {
+            transferStatus.textContent = 'Transfer tamamlandı';
+            setTimeout(() => {
+                fileTransferModal.hide();
+            }, 1000);
+        }
+    }
+    
+    // Hata ve Bilgi Gösterimi
+    function showError(message) {
+        const alert = document.createElement('div');
+        alert.className = 'alert alert-danger alert-dismissible fade show';
+        alert.innerHTML = `
+            <i class="fas fa-exclamation-circle me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        document.querySelector('.card-body').insertBefore(alert, document.querySelector('.card-body').firstChild);
+        
+        setTimeout(() => {
+            alert.remove();
+        }, 5000);
+    }
+    
+    function showInfo(message) {
+        const alert = document.createElement('div');
+        alert.className = 'alert alert-info alert-dismissible fade show';
+        alert.innerHTML = `
+            <i class="fas fa-info-circle me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        document.querySelector('.card-body').insertBefore(alert, document.querySelector('.card-body').firstChild);
+        
+        setTimeout(() => {
+            alert.remove();
+        }, 5000);
+    }
+    
+    function showSuccess(message, container) {
+        const alert = document.createElement('div');
+        alert.className = 'alert alert-success alert-dismissible fade show';
+        alert.innerHTML = `
+            <i class="fas fa-check-circle me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        container.insertBefore(alert, container.firstChild);
+        
+        setTimeout(() => {
+            alert.remove();
+        }, 5000);
+    }
+    
+    // Olay Dinleyicileri
+    document.addEventListener('DOMContentLoaded', () => {
+        // Dosya seçimi
+        selectFileBtn.addEventListener('click', () => {
+            fileInput.click();
+        });
+        
+        fileInput.addEventListener('change', event => {
+            handleFileSelect(event.target.files);
+            fileInput.value = '';
+        });
+        
+        // Sürükle-bırak
+        dropZone.addEventListener('dragover', event => {
+            event.preventDefault();
+            dropZone.classList.add('drag-over');
+        });
+        
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('drag-over');
+        });
+        
+        dropZone.addEventListener('drop', event => {
+            event.preventDefault();
+            dropZone.classList.remove('drag-over');
+            handleFileSelect(event.dataTransfer.files);
+        });
+        
+        // Transfer iptal
+        cancelTransferBtn.addEventListener('click', () => {
+            if (transferInProgress) {
+                if (dataChannel && dataChannel.readyState === 'open') {
+                    dataChannel.send(JSON.stringify({
+                        type: 'cancel'
+                    }));
+                }
+                resetTransfer();
+                
+                // Sıradaki dosyayı işle
+                processNextFileInQueue();
+            }
+        });
+        
+        // Transfer kabul
+        acceptTransferBtn.addEventListener('click', () => {
+            acceptTransferBtn.classList.add('d-none');
+        });
+        
+        // Sohbet formu
+        chatForm.addEventListener('submit', event => {
+            event.preventDefault();
+            sendMessage(messageInput.value);
+        });
+        
+        // Enter tuşu ile mesaj gönderme
+        messageInput.addEventListener('keypress', event => {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage(messageInput.value);
+            }
+        });
+        
+        // Kullanıcı adı değiştirme
+        const changeUsernameBtn = document.getElementById('changeUsernameBtn');
+        const changeUsernameModal = new bootstrap.Modal(document.getElementById('changeUsernameModal'));
+        const usernameInput = document.getElementById('usernameInput');
+        const saveUsernameBtn = document.getElementById('saveUsernameBtn');
+        
+        changeUsernameBtn.addEventListener('click', () => {
+            usernameInput.value = currentUser.name;
+            changeUsernameModal.show();
+        });
+        
+        saveUsernameBtn.addEventListener('click', () => {
+            const newUsername = usernameInput.value.trim();
+            if (newUsername && newUsername !== currentUser.name) {
+                // Kullanıcı adını güncelle
+                const oldUsername = currentUser.name;
+                currentUser.name = newUsername;
+                
+                // Kullanıcı listesini güncelle
+                updateUserList();
+                
+                // Diğer kullanıcılara bildir
+                if (dataChannel && dataChannel.readyState === 'open') {
+                    dataChannel.send(JSON.stringify({
+                        type: 'user_info',
+                        data: currentUser
+                    }));
+                    
+                    // Sistem mesajı gönder
+                    const systemMessage = {
+                        type: 'chat',
+                        data: showSystemMessage(`${oldUsername} kullanıcı adını ${newUsername} olarak değiştirdi.`)
+                    };
+                    
+                    dataChannel.send(JSON.stringify(systemMessage));
+                }
+                
+                // Modalı kapat
+                changeUsernameModal.hide();
+                
+                // Başarı mesajı göster
+                showSuccess(`Kullanıcı adınız ${newUsername} olarak değiştirildi.`, document.querySelector('.card-body'));
+            }
+        });
+        
+        // Enter tuşu ile kullanıcı adı değiştirme
+        usernameInput.addEventListener('keypress', event => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                saveUsernameBtn.click();
+            }
+        });
+        
+        // Oda ID kopyalama
+        copyRoomIdBtn.addEventListener('click', () => {
+            const roomId = document.getElementById('roomIdBadge').textContent.split(': ')[1];
+            navigator.clipboard.writeText(roomId);
+            
+            const originalHtml = copyRoomIdBtn.innerHTML;
+            copyRoomIdBtn.innerHTML = '<i class="fas fa-check"></i>';
+            setTimeout(() => {
+                copyRoomIdBtn.innerHTML = originalHtml;
+            }, 1500);
+        });
+    });
+    
+    // Socket.IO Olayları
+    socket.on('connect', () => {
+        console.log('Socket.IO bağlantısı kuruldu');
+    });
+    
+    socket.on('connected', data => {
+        console.log('Client ID:', data.client_id);
+        currentUser.id = data.client_id;
+        updateUserList();
+    });
+    
+    socket.on('room_joined', data => {
+        console.log('Odaya katıldı:', data);
+        
+        // Kullanıcı listesini güncelle
+        data.peers.forEach(peer => {
+            users.set(peer.id, peer);
+        });
+        updateUserList();
+        
+        // Eğer odada başka kullanıcı yoksa, başlatıcı ol
+        isInitiator = data.is_initiator || data.peers.length === 0;
+        console.log('Başlatıcı mı:', isInitiator);
+        
+        // Peer bağlantısını oluştur
+        createPeerConnection();
+        
+        // Başlatıcıysan offer oluştur
+        if (isInitiator) {
+            setTimeout(() => {
+                createOffer();
+            }, 1000);
+        }
+    });
+    
+    socket.on('new_peer', data => {
+        console.log('Yeni peer:', data);
+        
+        // Yeni kullanıcı bildirimi
+        showSystemMessage('Yeni bir kullanıcı odaya katıldı.');
+        
+        // Eğer başlatıcıysan, yeni bağlantı oluştur ve offer gönder
+        if (isInitiator) {
+            createPeerConnection();
+            setTimeout(() => {
+                createOffer();
+            }, 1000);
+        }
+    });
+    
+    socket.on('peer_disconnected', data => {
+        console.log('Peer ayrıldı:', data);
+        
+        // Kullanıcıyı listeden kaldır
+        const user = users.get(data.peer_id);
+        users.delete(data.peer_id);
+        updateUserList();
+        
+        // Ayrılma mesajı göster
+        if (user) {
+            showSystemMessage(`${user.name} odadan ayrıldı.`);
+        }
+        
+        // Bağlantıyı kapat ve yeni bağlantı bekle
+        if (peerConnection) {
+            peerConnection.close();
+            peerConnection = null;
+            updateConnectionStatus();
+        }
+    });
+    
+    socket.on('signal', async data => {
+        console.log('Sinyal alındı:', data.type);
+        
+        if (!peerConnection) {
+            console.log('Peer bağlantısı yok, yeni oluşturuluyor...');
+            createPeerConnection();
+        }
+        
+        try {
+            if (data.type === 'offer') {
+                console.log('Offer alındı, uzak açıklama ayarlanıyor...');
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+                
+                console.log('Cevap oluşturuluyor...');
+                const answer = await peerConnection.createAnswer();
+                
+                console.log('Yerel açıklama ayarlanıyor...');
+                await peerConnection.setLocalDescription(answer);
+                
+                console.log('Cevap gönderiliyor...');
+                socket.emit('signal', {
+                    type: 'answer',
+                    answer: answer
+                });
+            } else if (data.type === 'answer') {
+                console.log('Cevap alındı, uzak açıklama ayarlanıyor...');
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+            } else if (data.type === 'candidate') {
+                console.log('ICE adayı alındı, ekleniyor...');
+                if (data.candidate) {
+                    await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+                }
+            }
+        } catch (error) {
+            console.error('Sinyal işlenirken hata:', error);
+            showError('Bağlantı sinyali işlenirken bir hata oluştu: ' + error.message);
+        }
+    });
+    
+    // Odaya katıl
+    const roomId = '{{ room_id }}';
+    if (roomId) {
+        console.log('Odaya katılınıyor:', roomId);
+        socket.emit('join_room', { room_id: roomId });
+    }
+    
+    // Sistem mesajı gösterme
+    function showSystemMessage(message) {
+        const systemMessage = {
+            id: generateId(),
+            user: {
+                id: 'system',
+                name: 'Sistem',
+                color: '#6c757d'
+            },
+            text: message,
+            timestamp: Date.now()
+        };
+        
+        addMessageToChat(systemMessage);
+        
+        return systemMessage;
+    }
+    
+    function addFileToList(name, size, type, url = null) {
+        const list = type === 'sent' ? sentFilesList : receivedFilesList;
+        const icon = getFileIcon(name);
+        const color = getFileColor(name);
+        
+        const fileItem = document.createElement('div');
+        fileItem.className = 'file-item p-2 d-flex align-items-center';
+        
+        fileItem.innerHTML = `
+            <div class="file-icon me-3 ${color}">
+                <i class="fas ${icon}"></i>
+            </div>
+            <div class="flex-grow-1">
+                <h6 class="mb-0">${name}</h6>
+                <small class="text-muted">${formatBytes(size)}</small>
+            </div>
+            <div class="ms-3">
+                ${url ? `
+                    <button class="btn btn-sm btn-primary me-2" onclick="previewFile('${url}', '${name}')">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <a href="${url}" download="${name}" class="btn btn-sm btn-success">
+                        <i class="fas fa-download"></i>
+                    </a>
+                ` : ''}
+            </div>
+        `;
+        
+        list.appendChild(fileItem);
+    }
+    
+    // Dosya Önizleme
+    function previewFile(url, name) {
+        const extension = name.split('.').pop().toLowerCase();
+        const previewContent = document.getElementById('filePreviewContent');
+        
+        // Önizleme içeriğini temizle
+        previewContent.innerHTML = '';
+        
+        if (['jpg', 'jpeg', 'png', 'gif'].includes(extension)) {
+            // Resim önizleme
+            const img = document.createElement('img');
+            img.src = url;
+            img.className = 'img-fluid';
+            previewContent.appendChild(img);
+        } else if (['mp4', 'webm'].includes(extension)) {
+            // Video önizleme
+            const video = document.createElement('video');
+            video.src = url;
+            video.controls = true;
+            video.className = 'w-100';
+            previewContent.appendChild(video);
+        } else if (['mp3', 'wav'].includes(extension)) {
+            // Ses önizleme
+            const audio = document.createElement('audio');
+            audio.src = url;
+            audio.controls = true;
+            audio.className = 'w-100';
+            previewContent.appendChild(audio);
+        } else if (['pdf'].includes(extension)) {
+            // PDF önizleme
+            const embed = document.createElement('embed');
+            embed.src = url;
+            embed.type = 'application/pdf';
+            embed.className = 'w-100';
+            embed.style.height = '500px';
+            previewContent.appendChild(embed);
+        } else {
+            // Önizleme desteklenmiyor
+            previewContent.innerHTML = `
+                <div class="text-center">
+                    <div class="display-1 text-muted mb-3">
+                        <i class="fas ${getFileIcon(name)}"></i>
+                    </div>
+                    <h5>Önizleme desteklenmiyor</h5>
+                    <p class="text-muted">Bu dosya türü için önizleme kullanılamıyor.</p>
+                </div>
+            `;
+        }
+        
+        filePreviewModal.show();
+    }
+    
+    // Sohbet Fonksiyonları
+    function sendMessage(message) {
+        if (!message.trim() || !dataChannel) return;
+        
+        const chatMessage = {
+            type: 'chat',
+            data: {
+                id: generateId(),
+                user: currentUser,
+                text: message,
+                timestamp: Date.now()
+            }
+        };
+        
+        dataChannel.send(JSON.stringify(chatMessage));
+        addMessageToChat(chatMessage.data, true);
+        messageInput.value = '';
+    }
+    
+    function addMessageToChat(message, isSent = false) {
+        const messageElement = document.createElement('div');
+        messageElement.className = `chat-message ${isSent ? 'sent' : 'received'}`;
+        
+        const time = new Date(message.timestamp).toLocaleTimeString('tr-TR', {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        
+        messageElement.innerHTML = `
+            <div class="card border-0 ${isSent ? 'bg-primary text-white' : 'bg-light'}">
+                <div class="card-body p-2">
+                    <div class="d-flex align-items-center mb-1">
+                        <small class="fw-bold">${message.user.name}</small>
+                        <small class="ms-auto text-${isSent ? 'light' : 'muted'}">${time}</small>
+                    </div>
+                    <p class="mb-0">${escapeHtml(message.text)}</p>
+                </div>
+            </div>
+        `;
+        
+        chatMessages.appendChild(messageElement);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    
+    function updateUserList() {
+        userList.innerHTML = '';
+        
+        // Önce mevcut kullanıcıyı ekle
+        addUserToList(currentUser);
+        
+        // Diğer kullanıcıları ekle
+        users.forEach(user => {
+            if (user.id !== currentUser.id) {
+                addUserToList(user);
+            }
+        });
+    }
+    
+    function addUserToList(user) {
+        const userElement = document.createElement('div');
+        userElement.className = 'user-item p-2 d-flex align-items-center';
+        
+        userElement.innerHTML = `
+            <div class="user-avatar me-2" style="background-color: ${user.color}">
+                ${user.name.charAt(0).toUpperCase()}
+            </div>
+            <div class="flex-grow-1">
+                <h6 class="mb-0">${user.name}</h6>
+                <small class="text-muted">${user.id === currentUser.id ? '(Sen)' : 'Çevrimiçi'}</small>
+            </div>
+        `;
+        
+        userList.appendChild(userElement);
+    }
+    
+    // Yardımcı Fonksiyonlar
+    function generateId() {
+        return Math.random().toString(36).substr(2, 9);
+    }
+    
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    function handleUserInfo(user) {
+        users.set(user.id, user);
+        updateUserList();
+    }
+</script>
+{% endblock %} 

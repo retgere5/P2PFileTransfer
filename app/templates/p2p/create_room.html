@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Oda Oluştur - P2P Dosya Transferi{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-lg border-0 rounded-lg">
+            <div class="card-body p-5">
+                <div class="text-center mb-4">
+                    <h1 class="h3 fw-bold text-primary">
+                        <i class="fas fa-plus-circle me-2"></i>Yeni Oda Oluştur
+                    </h1>
+                    <p class="text-muted">Dosya paylaşımı için yeni bir oda oluşturun</p>
+                </div>
+                
+                <div id="createRoomSection" class="text-center">
+                    <p class="mb-4">
+                        Yeni bir oda oluşturmak için aşağıdaki butona tıklayın. Oda oluşturulduktan sonra, oda ID'sini karşı tarafa göndererek dosya paylaşımına başlayabilirsiniz.
+                    </p>
+                    
+                    <button id="createRoomBtn" class="btn btn-primary btn-lg">
+                        <i class="fas fa-plus-circle me-2"></i>Oda Oluştur
+                    </button>
+                </div>
+                
+                <div id="roomCreatedSection" class="d-none">
+                    <div class="alert alert-success mb-4">
+                        <i class="fas fa-check-circle me-2"></i>
+                        <strong>Oda başarıyla oluşturuldu!</strong> Aşağıdaki oda ID'sini karşı tarafa gönderin.
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="roomIdDisplay" class="form-label fw-bold">Oda ID</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control form-control-lg" id="roomIdDisplay" readonly>
+                            <button class="btn btn-outline-primary" type="button" id="copyRoomIdBtn" title="Kopyala">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                        <div class="form-text">Bu ID'yi karşı tarafa gönderin.</div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Bağlantı Durumu</label>
+                        <div class="alert alert-info" id="connectionStatus">
+                            <i class="fas fa-spinner fa-spin me-2"></i>
+                            <span>Bağlantı bekleniyor...</span>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button id="enterRoomBtn" class="btn btn-success btn-lg">
+                            <i class="fas fa-door-open me-2"></i>Odaya Gir
+                        </button>
+                        <button id="cancelRoomBtn" class="btn btn-outline-danger">
+                            <i class="fas fa-times me-2"></i>İptal
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // DOM elementleri
+        const createRoomBtn = document.getElementById('createRoomBtn');
+        const createRoomSection = document.getElementById('createRoomSection');
+        const roomCreatedSection = document.getElementById('roomCreatedSection');
+        const roomIdDisplay = document.getElementById('roomIdDisplay');
+        const copyRoomIdBtn = document.getElementById('copyRoomIdBtn');
+        const enterRoomBtn = document.getElementById('enterRoomBtn');
+        const cancelRoomBtn = document.getElementById('cancelRoomBtn');
+        const connectionStatus = document.getElementById('connectionStatus');
+        
+        // Socket.IO bağlantısı
+        const socket = io();
+        
+        // Socket.IO olayları
+        socket.on('connect', function() {
+            console.log('Socket.IO bağlantısı kuruldu');
+        });
+        
+        socket.on('connected', function(data) {
+            console.log('Client ID:', data.client_id);
+        });
+        
+        socket.on('room_created', function(data) {
+            console.log('Oda oluşturuldu:', data.room_id);
+            
+            // Oda ID'sini göster
+            roomIdDisplay.value = data.room_id;
+            
+            // Bölümleri değiştir
+            createRoomSection.classList.add('d-none');
+            roomCreatedSection.classList.remove('d-none');
+        });
+        
+        socket.on('new_peer', function(data) {
+            console.log('Yeni peer bağlandı:', data.peer_id);
+            
+            // Bağlantı durumunu güncelle
+            connectionStatus.innerHTML = `
+                <i class="fas fa-check-circle text-success me-2"></i>
+                <span>Bağlantı kuruldu! Karşı taraf odaya katıldı.</span>
+            `;
+            
+            // Odaya gir butonunu etkinleştir
+            enterRoomBtn.disabled = false;
+        });
+        
+        // Oda oluştur butonu
+        createRoomBtn.addEventListener('click', function() {
+            socket.emit('create_room');
+        });
+        
+        // Oda ID'sini kopyala butonu
+        copyRoomIdBtn.addEventListener('click', function() {
+            roomIdDisplay.select();
+            document.execCommand('copy');
+            
+            // Kopyalandı bildirimi
+            const originalText = copyRoomIdBtn.innerHTML;
+            copyRoomIdBtn.innerHTML = '<i class="fas fa-check"></i>';
+            setTimeout(function() {
+                copyRoomIdBtn.innerHTML = originalText;
+            }, 1500);
+        });
+        
+        // Odaya gir butonu
+        enterRoomBtn.addEventListener('click', function() {
+            const roomId = roomIdDisplay.value;
+            window.location.href = "{{ url_for('p2p.room') }}?id=" + roomId;
+        });
+        
+        // İptal butonu
+        cancelRoomBtn.addEventListener('click', function() {
+            // Socket.IO bağlantısını kapat
+            socket.emit('leave_room');
+            
+            // Ana sayfaya yönlendir
+            window.location.href = "{{ url_for('main.index') }}";
+        });
+        
+        // Başlangıçta odaya gir butonunu devre dışı bırak
+        enterRoomBtn.disabled = true;
+    });
+</script>
+{% endblock %} 

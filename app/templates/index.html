@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Ana Sayfa - P2P Dosya Transferi{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card shadow-lg border-0 rounded-lg">
+            <div class="card-body p-5">
+                <div class="text-center mb-5">
+                    <h1 class="display-4 fw-bold text-primary">
+                        <i class="fas fa-exchange-alt me-3"></i>P2P Dosya Transferi
+                    </h1>
+                    <p class="lead">Hızlı, güvenli ve kolay dosya paylaşımı için eşler arası (P2P) dosya transfer uygulaması</p>
+                </div>
+                
+                <div class="row g-4 mb-5">
+                    <div class="col-md-4">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body text-center p-4">
+                                <div class="feature-icon bg-primary bg-gradient text-white rounded-circle mb-3">
+                                    <i class="fas fa-bolt fa-2x p-3"></i>
+                                </div>
+                                <h5 class="card-title">Hızlı Transfer</h5>
+                                <p class="card-text">Dosyalarınızı doğrudan eşler arasında, herhangi bir sunucu üzerinden geçmeden hızlıca transfer edin.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body text-center p-4">
+                                <div class="feature-icon bg-primary bg-gradient text-white rounded-circle mb-3">
+                                    <i class="fas fa-shield-alt fa-2x p-3"></i>
+                                </div>
+                                <h5 class="card-title">Güvenli Bağlantı</h5>
+                                <p class="card-text">WebRTC teknolojisi ile şifrelenmiş bağlantılar üzerinden güvenli dosya transferi sağlayın.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body text-center p-4">
+                                <div class="feature-icon bg-primary bg-gradient text-white rounded-circle mb-3">
+                                    <i class="fas fa-laptop-code fa-2x p-3"></i>
+                                </div>
+                                <h5 class="card-title">Kolay Kullanım</h5>
+                                <p class="card-text">Kullanıcı dostu arayüz ile dosyalarınızı sürükle-bırak yöntemiyle kolayca paylaşın.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row justify-content-center">
+                    <div class="col-md-6 text-center">
+                        <div class="d-grid gap-3">
+                            <a href="{{ url_for('p2p.room') }}" class="btn btn-primary btn-lg">
+                                <i class="fas fa-plus-circle me-2"></i>Yeni Oda Oluştur
+                            </a>
+                            <button type="button" class="btn btn-outline-primary btn-lg" data-bs-toggle="modal" data-bs-target="#joinRoomModal">
+                                <i class="fas fa-sign-in-alt me-2"></i>Odaya Katıl
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Odaya Katıl Modal -->
+<div class="modal fade" id="joinRoomModal" tabindex="-1" aria-labelledby="joinRoomModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="joinRoomModalLabel">Odaya Katıl</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+            </div>
+            <div class="modal-body">
+                <form id="joinRoomForm">
+                    <div class="mb-3">
+                        <label for="roomId" class="form-label">Oda ID</label>
+                        <input type="text" class="form-control" id="roomId" placeholder="Oda ID'sini girin" required>
+                        <div class="form-text">Katılmak istediğiniz odanın ID'sini girin.</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-primary" id="joinRoomBtn">Katıl</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Odaya katıl butonu
+        const joinRoomBtn = document.getElementById('joinRoomBtn');
+        const roomIdInput = document.getElementById('roomId');
+        
+        joinRoomBtn.addEventListener('click', function() {
+            const roomId = roomIdInput.value.trim();
+            if (roomId) {
+                window.location.href = "{{ url_for('p2p.room') }}?id=" + roomId;
+            }
+        });
+        
+        // Enter tuşu ile form gönderimi
+        roomIdInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                joinRoomBtn.click();
+            }
+        });
+    });
+</script>
+{% endblock %} 

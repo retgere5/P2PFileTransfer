@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Hakkında - P2P Dosya Transferi{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card shadow-lg border-0 rounded-lg">
+            <div class="card-body p-5">
+                <h1 class="display-5 fw-bold text-primary mb-4">
+                    <i class="fas fa-info-circle me-3"></i>Hakkında
+                </h1>
+                
+                <div class="mb-5">
+                    <h2 class="h4 fw-bold">P2P Dosya Transferi Nedir?</h2>
+                    <p>
+                        P2P Dosya Transferi, internet üzerinden dosya paylaşımını kolaylaştırmak için tasarlanmış, eşler arası (peer-to-peer) teknolojisini kullanan bir web uygulamasıdır. 
+                        Bu uygulama, dosyalarınızı herhangi bir sunucu üzerinden geçirmeden, doğrudan diğer kullanıcılara göndermenizi sağlar.
+                    </p>
+                    <p>
+                        WebRTC teknolojisi kullanılarak geliştirilen bu uygulama, tarayıcınız üzerinden güvenli ve hızlı bir şekilde dosya transferi yapmanıza olanak tanır.
+                    </p>
+                </div>
+                
+                <div class="mb-5">
+                    <h2 class="h4 fw-bold">Nasıl Çalışır?</h2>
+                    <ol class="list-group list-group-numbered mb-3">
+                        <li class="list-group-item border-0 ps-0">Yeni bir oda oluşturun veya mevcut bir odaya katılın.</li>
+                        <li class="list-group-item border-0 ps-0">Oda ID'sini karşı tarafa gönderin.</li>
+                        <li class="list-group-item border-0 ps-0">Karşı taraf oda ID'si ile odaya katıldığında, P2P bağlantısı otomatik olarak kurulur.</li>
+                        <li class="list-group-item border-0 ps-0">Dosyalarınızı sürükleyip bırakarak veya dosya seçerek karşı tarafa gönderebilirsiniz.</li>
+                        <li class="list-group-item border-0 ps-0">Dosya transferi tamamlandığında, karşı taraf dosyayı indirebilir.</li>
+                    </ol>
+                </div>
+                
+                <div class="mb-5">
+                    <h2 class="h4 fw-bold">Güvenlik</h2>
+                    <p>
+                        P2P Dosya Transferi, WebRTC teknolojisinin sağladığı güvenlik özellikleri sayesinde, dosyalarınızı şifrelenmiş bir bağlantı üzerinden gönderir.
+                        Dosyalarınız hiçbir sunucuda depolanmaz ve doğrudan alıcıya iletilir.
+                    </p>
+                    <div class="alert alert-info">
+                        <i class="fas fa-shield-alt me-2"></i>
+                        <strong>Not:</strong> Dosya transferi sırasında, dosyalarınız şifrelenmiş bir kanal üzerinden iletilir, ancak dosyaların kendileri şifrelenmez.
+                        Hassas bilgiler içeren dosyaları göndermeden önce şifrelemeniz önerilir.
+                    </div>
+                </div>
+                
+                <div class="mb-5">
+                    <h2 class="h4 fw-bold">Teknik Detaylar</h2>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5 class="h6 fw-bold">Frontend</h5>
+                            <ul class="list-unstyled">
+                                <li><i class="fab fa-html5 me-2 text-danger"></i>HTML5</li>
+                                <li><i class="fab fa-css3-alt me-2 text-primary"></i>CSS3</li>
+                                <li><i class="fab fa-js me-2 text-warning"></i>JavaScript</li>
+                                <li><i class="fab fa-bootstrap me-2 text-purple"></i>Bootstrap 5</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h5 class="h6 fw-bold">Backend</h5>
+                            <ul class="list-unstyled">
+                                <li><i class="fab fa-python me-2 text-primary"></i>Python</li>
+                                <li><i class="fas fa-server me-2 text-success"></i>Flask</li>
+                                <li><i class="fas fa-plug me-2 text-danger"></i>Socket.IO</li>
+                                <li><i class="fas fa-network-wired me-2 text-info"></i>WebRTC</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-center">
+                    <a href="{{ url_for('main.index') }}" class="btn btn-primary">
+                        <i class="fas fa-home me-2"></i>Ana Sayfaya Dön
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
