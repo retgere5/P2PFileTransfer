@@ -1,23 +1,52 @@
-# P2P Dosya Transferi
+# 🔄 P2P Dosya Transferi
 
-Python ve WebRTC ile geliştirilmiş, tarayıcı tabanlı gerçek zamanlı dosya paylaşım uygulaması.
+<div align="center">
 
-## Özellikler
+![P2P File Transfer](app/static/img/favicon.png)
 
-- 🔄 WebRTC üzerinden P2P dosya transferi
-- 💬 Gerçek zamanlı sohbet özelliği
-- 🔒 Uçtan uca şifrelenmiş bağlantı
-- 📁 Sürükle-bırak dosya yükleme
-- 🚀 Yüksek hızlı veri aktarımı (256KB chunk boyutu)
-- 👥 Kullanıcı yönetimi ve oda sistemi
-- 🌐 Tarayıcı tabanlı, kurulum gerektirmeyen arayüz
-- 📱 Responsive tasarım ile mobil uyumluluk
-- 🔄 Arka planda dosya transferi (Web Workers)
-- 📊 Dosya transfer ilerleme göstergesi
-- 🖼️ Resim, video ve PDF önizleme
-- 🌍 Ngrok ile internet üzerinden erişim imkanı
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Python](https://img.shields.io/badge/Python-3.6+-blue.svg)](https://www.python.org/)
+[![Flask](https://img.shields.io/badge/Flask-2.3.3-red.svg)](https://flask.palletsprojects.com/)
+[![WebRTC](https://img.shields.io/badge/WebRTC-Enabled-green.svg)](https://webrtc.org/)
 
-## Proje Yapısı
+**Python ve WebRTC ile geliştirilmiş, tarayıcı tabanlı gerçek zamanlı dosya paylaşım uygulaması.**
+
+[Özellikler](#özellikler) • 
+[Kurulum](#kurulum) • 
+[Kullanım](#kullanım) • 
+[Teknik Detaylar](#teknik-detaylar) • 
+[Ngrok ile Paylaşım](#ngrok-ile-dış-ağa-paylaşma)
+
+</div>
+
+## ✨ Özellikler
+
+<table>
+  <tr>
+    <td>
+      <ul>
+        <li>🔄 WebRTC üzerinden P2P dosya transferi</li>
+        <li>💬 Gerçek zamanlı sohbet özelliği</li>
+        <li>🔒 Uçtan uca şifrelenmiş bağlantı</li>
+        <li>📁 Sürükle-bırak dosya yükleme</li>
+        <li>🚀 Yüksek hızlı veri aktarımı (256KB chunk boyutu)</li>
+        <li>👥 Kullanıcı yönetimi ve oda sistemi</li>
+      </ul>
+    </td>
+    <td>
+      <ul>
+        <li>🌐 Tarayıcı tabanlı, kurulum gerektirmeyen arayüz</li>
+        <li>📱 Responsive tasarım ile mobil uyumluluk</li>
+        <li>🔄 Arka planda dosya transferi (Web Workers)</li>
+        <li>📊 Dosya transfer ilerleme göstergesi</li>
+        <li>🖼️ Resim, video ve PDF önizleme</li>
+        <li>🌍 Ngrok ile internet üzerinden erişim imkanı</li>
+      </ul>
+    </td>
+  </tr>
+</table>
+
+## 📂 Proje Yapısı
 
 ```
 p2p_file_transfer/
@@ -43,152 +72,269 @@ p2p_file_transfer/
 └── requirements.txt        # Bağımlılıklar
 ```
 
-## Gereksinimler
+## 🛠️ Gereksinimler
 
-- Python 3.6+
-- Gerekli kütüphaneler:
-  - Flask (web sunucusu)
-  - Flask-SocketIO (gerçek zamanlı iletişim)
-  - eventlet (asenkron işlemler)
-  - python-dotenv (ortam değişkenleri)
-- Ngrok (dış ağa paylaşım için, opsiyonel)
+<table>
+  <tr>
+    <th>Gereksinim</th>
+    <th>Açıklama</th>
+  </tr>
+  <tr>
+    <td>Python 3.6+</td>
+    <td>Uygulama çalışma ortamı</td>
+  </tr>
+  <tr>
+    <td>Flask</td>
+    <td>Web sunucusu framework'ü</td>
+  </tr>
+  <tr>
+    <td>Flask-SocketIO</td>
+    <td>Gerçek zamanlı iletişim için</td>
+  </tr>
+  <tr>
+    <td>eventlet</td>
+    <td>Asenkron işlemler için</td>
+  </tr>
+  <tr>
+    <td>python-dotenv</td>
+    <td>Ortam değişkenleri yönetimi</td>
+  </tr>
+  <tr>
+    <td>Ngrok (opsiyonel)</td>
+    <td>Dış ağa paylaşım için</td>
+  </tr>
+</table>
 
-## Kurulum
+## 🚀 Kurulum
 
-1. Depoyu klonlayın
+<details open>
+<summary><b>1. Depoyu klonlayın</b></summary>
+
 ```bash
 git clone https://github.com/kullanici/P2PFileTransfer.git
 cd P2PFileTransfer
 ```
+</details>
 
-2. Sanal ortam oluşturun (opsiyonel)
+<details open>
+<summary><b>2. Sanal ortam oluşturun (opsiyonel)</b></summary>
+
 ```bash
 python -m venv venv
+
 # Windows
 venv\Scripts\activate
+
 # Linux/Mac
 source venv/bin/activate
 ```
+</details>
 
-3. Bağımlılıkları yükleyin
+<details open>
+<summary><b>3. Bağımlılıkları yükleyin</b></summary>
+
 ```bash
 pip install -r requirements.txt
 ```
+</details>
 
-4. Uygulamayı çalıştırın
+<details open>
+<summary><b>4. Uygulamayı çalıştırın</b></summary>
+
 ```bash
 python run.py
 ```
 
 Uygulama varsayılan olarak `http://localhost:5000` adresinde çalışacaktır.
+</details>
 
-## Ngrok ile Dış Ağa Paylaşma
+## 🌐 Ngrok ile Dış Ağa Paylaşma
+
+<div align="center">
+  
+  ![Ngrok](https://ngrok.com/static/img/ngrok-black.svg)
+  
+</div>
 
 Ngrok, yerel sunucunuzu internet üzerinden erişilebilir hale getiren bir tünel hizmetidir. Bu özellik sayesinde, uygulamanızı yerel ağınızın dışındaki kullanıcılarla paylaşabilirsiniz.
 
-### Ngrok Kurulumu
+### 📥 Ngrok Kurulumu
 
-1. [Ngrok'un web sitesinden](https://ngrok.com/download) işletim sisteminize uygun sürümü indirin
+<details>
+<summary><b>1. Ngrok'u indirin ve kurun</b></summary>
 
-2. İndirdiğiniz dosyayı açın ve kurulum talimatlarını izleyin
+[Ngrok'un web sitesinden](https://ngrok.com/download) işletim sisteminize uygun sürümü indirin ve kurulum talimatlarını izleyin.
+</details>
 
-3. Ngrok hesabı oluşturun ve auth token alın
-   - [Ngrok'un web sitesine](https://ngrok.com/) gidin ve ücretsiz bir hesap oluşturun
-   - Hesabınıza giriş yaptıktan sonra, auth token'ınızı [dashboard](https://dashboard.ngrok.com/get-started/your-authtoken) sayfasından alın
+<details>
+<summary><b>2. Ngrok hesabı oluşturun ve auth token alın</b></summary>
 
-4. Auth token'ı yapılandırın
+- [Ngrok'un web sitesine](https://ngrok.com/) gidin ve ücretsiz bir hesap oluşturun
+- Hesabınıza giriş yaptıktan sonra, auth token'ınızı [dashboard](https://dashboard.ngrok.com/get-started/your-authtoken) sayfasından alın
+</details>
+
+<details>
+<summary><b>3. Auth token'ı yapılandırın</b></summary>
+
 ```bash
 ngrok authtoken YOUR_AUTH_TOKEN
 ```
+</details>
 
-### Ngrok ile Uygulamayı Paylaşma
+### 🔗 Ngrok ile Uygulamayı Paylaşma
 
-1. Önce uygulamayı normal şekilde başlatın
+<details open>
+<summary><b>1. Uygulamayı başlatın</b></summary>
+
 ```bash
 python run.py
 ```
+</details>
 
-2. Yeni bir terminal penceresi açın ve ngrok komutunu çalıştırın
+<details open>
+<summary><b>2. Yeni bir terminal penceresi açın ve ngrok komutunu çalıştırın</b></summary>
+
 ```bash
 # Varsayılan port 5000 için
 ngrok http 5000
 ```
+</details>
 
-3. Ngrok terminal çıktısında görünen URL'yi not edin (örn. `https://a1b2c3d4.ngrok.io`)
+<details open>
+<summary><b>3. URL'yi paylaşın</b></summary>
 
-4. Bu URL'yi diğer kullanıcılarla paylaşın. Artık internet üzerinden uygulamanıza erişebilirler.
+Ngrok terminal çıktısında görünen URL'yi not edin (örn. `https://a1b2c3d4.ngrok.io`) ve bu URL'yi diğer kullanıcılarla paylaşın.
+</details>
 
-### Ngrok Avantajları
+### ⚡ Ngrok Avantajları ve Sınırlamaları
 
-- 🌐 İnternet üzerinden erişim
-- 🔄 Otomatik SSL sertifikası
-- 📊 Trafik izleme ve analiz
-- 🛡️ DDoS koruması
+<table>
+  <tr>
+    <th>Avantajlar</th>
+    <th>Sınırlamalar</th>
+  </tr>
+  <tr>
+    <td>
+      <ul>
+        <li>🌐 İnternet üzerinden erişim</li>
+        <li>🔄 Otomatik SSL sertifikası</li>
+        <li>📊 Trafik izleme ve analiz</li>
+        <li>🛡️ DDoS koruması</li>
+      </ul>
+    </td>
+    <td>
+      <ul>
+        <li>⏱️ Ücretsiz hesaplar için sınırlı bağlantı süresi (2 saat)</li>
+        <li>🔄 Her yeniden başlatmada değişen URL</li>
+        <li>📊 Ücretsiz hesaplar için sınırlı bant genişliği</li>
+      </ul>
+    </td>
+  </tr>
+</table>
 
-### Ngrok Sınırlamaları
+## 📝 Kullanım
 
-- Ücretsiz hesaplar için sınırlı bağlantı süresi (2 saat)
-- Her yeniden başlatmada değişen URL (ücretli hesaplar için sabit URL)
-- Ücretsiz hesaplar için sınırlı bant genişliği
+### 🏠 Oda Oluşturma ve Katılma
 
-## Kullanım
+<table>
+  <tr>
+    <th width="50%">Oda Oluşturma</th>
+    <th width="50%">Odaya Katılma</th>
+  </tr>
+  <tr>
+    <td>
+      <ol>
+        <li>Ana sayfada "Oda Oluştur" butonuna tıklayın</li>
+        <li>Oluşturulan oda ID'sini kopyalayın ve karşı tarafa gönderin</li>
+        <li>Dosya transferi ve sohbet için hazırsınız</li>
+      </ol>
+    </td>
+    <td>
+      <ol>
+        <li>Ana sayfada "Odaya Katıl" butonuna tıklayın</li>
+        <li>Size verilen oda ID'sini girin</li>
+        <li>Bağlantı kurulduktan sonra dosya transferi ve sohbet yapabilirsiniz</li>
+      </ol>
+    </td>
+  </tr>
+</table>
 
-### Oda Oluşturma
-
-1. Ana sayfada "Oda Oluştur" butonuna tıklayın
-2. Oluşturulan oda ID'sini kopyalayın ve karşı tarafa gönderin
-3. Dosya transferi ve sohbet için hazırsınız
-
-### Odaya Katılma
-
-1. Ana sayfada "Odaya Katıl" butonuna tıklayın
-2. Size verilen oda ID'sini girin
-3. Bağlantı kurulduktan sonra dosya transferi ve sohbet yapabilirsiniz
-
-### Dosya Transferi
+### 📤 Dosya Transferi
 
 - Dosyaları sürükle-bırak yaparak veya "Dosya Seç" butonuyla yükleyebilirsiniz
 - Birden fazla dosya seçildiğinde, dosyalar sırayla transfer edilir
 - Transfer sırasında ilerleme çubuğu ile durum takip edilebilir
 - Alınan dosyalar "Alınan Dosyalar" bölümünde görüntülenir ve indirilebilir
 
-### Sohbet
+### 💬 Sohbet
 
 - Sağ paneldeki sohbet bölümünden mesaj gönderebilirsiniz
 - Kullanıcı adınızı değiştirmek için kullanıcılar panelindeki düzenleme simgesine tıklayın
 
-## Teknik Detaylar
+## 🔧 Teknik Detaylar
 
-### WebRTC Bağlantısı
+<details open>
+<summary><b>WebRTC Bağlantısı</b></summary>
 
 Uygulama, tarayıcılar arasında doğrudan bağlantı kurmak için WebRTC teknolojisini kullanır. Bağlantı kurulumu için sinyal sunucusu olarak Flask-SocketIO kullanılır, ancak veri aktarımı tamamen P2P olarak gerçekleşir.
+</details>
 
-### Dosya Transfer Optimizasyonu
+<details open>
+<summary><b>Dosya Transfer Optimizasyonu</b></summary>
 
-- Chunk boyutu: 256KB (yüksek hız için optimize edilmiş)
-- Web Workers kullanılarak arka planda transfer
-- Sayfa görünürlük API'si ile sekme arka plandayken bile transfer devam eder
-- Dosya kuyruk sistemi ile çoklu dosya transferi
+- **Chunk boyutu:** 256KB (yüksek hız için optimize edilmiş)
+- **Web Workers** kullanılarak arka planda transfer
+- **Sayfa görünürlük API'si** ile sekme arka plandayken bile transfer devam eder
+- **Dosya kuyruk sistemi** ile çoklu dosya transferi
+</details>
 
-### Güvenlik
+<details open>
+<summary><b>Güvenlik</b></summary>
 
 Tüm veri transferi WebRTC'nin sağladığı uçtan uca şifreleme ile korunur. Hiçbir dosya sunucu üzerinden geçmez, doğrudan kullanıcılar arasında transfer edilir.
+</details>
 
-### Ngrok Tünelleme
+<details open>
+<summary><b>Ngrok Tünelleme</b></summary>
 
 Ngrok, uygulamanızı internet üzerinden erişilebilir hale getirmek için güvenli bir tünel oluşturur. Bu, NAT ve güvenlik duvarı sınırlamalarını aşmanıza olanak tanır. WebRTC sinyal sunucusu olarak çalışan Flask uygulamanız, ngrok tüneli üzerinden erişilebilir olur, böylece internet üzerindeki kullanıcılar P2P bağlantı kurabilir.
+</details>
 
-## Tarayıcı Desteği
+## 🌐 Tarayıcı Desteği
 
-- Google Chrome (önerilen)
-- Mozilla Firefox
-- Microsoft Edge
-- Safari (kısmi destek)
+<table>
+  <tr>
+    <td align="center"><img src="https://raw.githubusercontent.com/alrra/browser-logos/master/src/chrome/chrome_48x48.png" width="24px" height="24px" alt="Chrome"><br>Chrome</td>
+    <td align="center"><img src="https://raw.githubusercontent.com/alrra/browser-logos/master/src/firefox/firefox_48x48.png" width="24px" height="24px" alt="Firefox"><br>Firefox</td>
+    <td align="center"><img src="https://raw.githubusercontent.com/alrra/browser-logos/master/src/edge/edge_48x48.png" width="24px" height="24px" alt="Edge"><br>Edge</td>
+    <td align="center"><img src="https://raw.githubusercontent.com/alrra/browser-logos/master/src/safari/safari_48x48.png" width="24px" height="24px" alt="Safari"><br>Safari*</td>
+  </tr>
+  <tr>
+    <td align="center">✅</td>
+    <td align="center">✅</td>
+    <td align="center">✅</td>
+    <td align="center">⚠️</td>
+  </tr>
+</table>
 
-## Lisans
+\* Safari'de kısmi destek bulunmaktadır.
 
-Bu proje MIT lisansı altında lisanslanmıştır.
+## 📄 Lisans
 
-## İletişim
+<div align="center">
+  
+  [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+  
+  Bu proje MIT lisansı altında lisanslanmıştır.
+  
+</div>
 
-Sorularınız veya önerileriniz için GitHub üzerinden issue açabilir veya pull request gönderebilirsiniz. 
+## 📞 İletişim
+
+Sorularınız veya önerileriniz için GitHub üzerinden issue açabilir veya pull request gönderebilirsiniz.
+
+---
+
+<div align="center">
+  <sub>❤️ ile geliştirilmiştir</sub>
+</div> 
